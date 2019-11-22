@@ -59,8 +59,8 @@ public class Block {
 
     public void sunstract(int value) {
         int limit = _compressed ? COMPRESSED_BLOCK_SIZE : STANDARD_BLOCK_SIZE;
-        for (int i = 0; i < limit; i += 2) {
-            for (int j = 0; j < limit; j += 2) {
+        for (int i = 0; i < limit; i++) {
+            for (int j = 0; j < limit; j++) {
                 this.values[i][j] -= value;
             }
         }
@@ -69,8 +69,8 @@ public class Block {
 
     public void add(int value) {
         int limit = _compressed ? COMPRESSED_BLOCK_SIZE : STANDARD_BLOCK_SIZE;
-        for (int i = 0; i < limit; i += 2) {
-            for (int j = 0; j < limit; j += 2) {
+        for (int i = 0; i < limit; i++) {
+            for (int j = 0; j < limit; j++) {
                 this.values[i][j] += value;
             }
         }
@@ -79,8 +79,8 @@ public class Block {
 
     public void multiply(int value) {
         int limit = _compressed ? COMPRESSED_BLOCK_SIZE : STANDARD_BLOCK_SIZE;
-        for (int i = 0; i < limit; i += 2) {
-            for (int j = 0; j < limit; j += 2) {
+        for (int i = 0; i < limit; i++) {
+            for (int j = 0; j < limit; j++) {
                 this.values[i][j] *= value;
             }
         }
@@ -88,8 +88,8 @@ public class Block {
 
     public void divide(int value, boolean round) {
         int limit = _compressed ? COMPRESSED_BLOCK_SIZE : STANDARD_BLOCK_SIZE;
-        for (int i = 0; i < limit; i += 2) {
-            for (int j = 0; j < limit; j += 2) {
+        for (int i = 0; i < limit; i++) {
+            for (int j = 0; j < limit; j++) {
                 this.values[i][j] /= value;
                 if (round) {
                     this.values[i][j] = Math.round(this.values[i][j]);
@@ -100,8 +100,8 @@ public class Block {
 
     public void multiply(int[][] value) {
         int limit = _compressed ? COMPRESSED_BLOCK_SIZE : STANDARD_BLOCK_SIZE;
-        for (int i = 0; i < limit; i += 2) {
-            for (int j = 0; j < limit; j += 2) {
+        for (int i = 0; i < limit; i++) {
+            for (int j = 0; j < limit; j++) {
                 this.values[i][j] *= value[i][j];
             }
         }
@@ -109,8 +109,8 @@ public class Block {
 
     public void divide(int[][] value, boolean round) {
         int limit = _compressed ? COMPRESSED_BLOCK_SIZE : STANDARD_BLOCK_SIZE;
-        for (int i = 0; i < limit; i += 2) {
-            for (int j = 0; j < limit; j += 2) {
+        for (int i = 0; i < limit; i++) {
+            for (int j = 0; j < limit; j++) {
                 this.values[i][j] /= value[i][j];
                 if (round) {
                     this.values[i][j] = Math.round(this.values[i][j]);
@@ -121,10 +121,21 @@ public class Block {
 
     public void round() {
         int limit = _compressed ? COMPRESSED_BLOCK_SIZE : STANDARD_BLOCK_SIZE;
-        for (int i = 0; i < limit; i += 2) {
-            for (int j = 0; j < limit; j += 2) {
+        for (int i = 0; i < limit; i++) {
+            for (int j = 0; j < limit; j++) {
                 this.values[i][j] = Math.round(this.values[i][j]);
             }
         }
+    }
+
+    public static String print2DArray(double[][] matrix) {
+        String output = new String();
+        for (int i = 0; i < matrix.length; i++) {
+            for (int j = 0; j < matrix.length; j++) {
+                output += " (" + matrix[i][j] + ") ";
+            }
+            output += "\n";
+        }
+        return output;
     }
 }

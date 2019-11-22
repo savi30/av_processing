@@ -14,7 +14,7 @@ public class Application {
     public static void main(String... args) throws IOException {
         PPM ppm = PPM.fromFile("src/data/nt-P3.ppm");
         Encoder encoder = new Encoder();
-        List<List<Block>> encodedBlocks = encoder.encode(ppm);
+        List<List<Integer>> encodedBlocks = encoder.encode(ppm);
         Decoder decoder = new Decoder();
         List<int[][]> imageData = decoder.decode(encodedBlocks, ppm.getWidth(), ppm.getHeight());
         saveImage(imageData, ppm.getHeight(), ppm.getWidth(), ppm.getFormat(), ppm.getInfo(), ppm.getMaxValue());
