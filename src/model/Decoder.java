@@ -8,10 +8,120 @@ public class Decoder {
     private List<Block> luminance = new ArrayList<>();
     private List<Block> chrominanceBlue = new ArrayList<>();
     private List<Block> chrominanceRed = new ArrayList<>();
+    private List<Integer> idx = new ArrayList<>();
 
-    public List<int[][]> decode(List<List<Block>> encodedBlocks, int width, int height) {
-        inverseDCT(encodedBlocks);
+    public List<int[][]> decode(List<List<Integer>> encodedValues, int width, int height) {
+        List<List<Block>> decompressedBlocks = decompressBlocks(encodedValues);
+        inverseDCT(decompressedBlocks);
         return convertToRGB(width, height);
+    }
+
+    private List<List<Block>> decompressBlocks(List<List<Integer>> encodedValues) {
+        List<Block> Y = new ArrayList<>();
+        List<Block> Cb = new ArrayList<>();
+        List<Block> Cr = new ArrayList<>();
+        for (int i = 0; i < encodedValues.size(); i += 3) {
+            Y.add(getBlock(encodedValues.get(i)));
+            Cb.add(getBlock(encodedValues.get(i + 1)));
+            Cr.add(getBlock(encodedValues.get(i + 2)));
+        }
+        return Arrays.asList(Y, Cb, Cr);
+    }
+
+    private Block getBlock(List<Integer> integers) {
+        double[][] values = new double[Block.STANDARD_BLOCK_SIZE][Block.STANDARD_BLOCK_SIZE];
+        int elemtCount = integers.size();
+        if (elemtCount == 4) {
+            return new Block(values);
+        }
+        boolean direction = false; // false means down true means up
+        int i = 0;
+        int j = 1;
+        int count;
+        int k;
+        idx.add(0, 2);
+        int DC = integers.get(1);
+        values[0][0] = DC;
+
+        while (j < Block.STANDARD_BLOCK_SIZE) {
+            count = j + 1;
+            if (direction) {
+                //Going up
+                i = j;
+                k = 0;
+                while (count > 0) {
+                    Integer val = getValue(idx, integers, elemtCount);
+                    if (val == null) {
+                        return new Block(values);
+                    }
+                    values[i--][k++] = val;
+                    count--;
+                }
+            } else {
+                //Going down
+                i = 0;
+                k = j;
+                while (count > 0) {
+                    Integer val = getValue(idx, integers, elemtCount);
+                    if (val == null) {
+                        return new Block(values);
+                    }
+                    values[i++][k--] = val;
+                    count--;
+                }
+            }
+            direction = !direction;
+            j++;
+        }
+        j = 1;
+        while (j < Block.STANDARD_BLOCK_SIZE) {
+            count = Block.STANDARD_BLOCK_SIZE - j;
+            if (direction) {
+                //Going up
+                i = Block.STANDARD_BLOCK_SIZE - 1;
+                k = j;
+                while (count > 0) {
+                    Integer val = getValue(idx, integers, elemtCount);
+                    if (val == null) {
+                        return new Block(values);
+                    }
+                    values[i--][k++] = val;
+                    count--;
+                }
+            } else {
+                //Going down
+                i = j;
+                k = Block.STANDARD_BLOCK_SIZE - 1;
+                while (count > 0) {
+                    Integer val = getValue(idx, integers, elemtCount);
+                    if (val == null) {
+                        return new Block(values);
+                    }
+                    values[i++][k--] = val;
+                    count--;
+                }
+            }
+            j++;
+            direction = !direction;
+        }
+
+        return new Block(values);
+    }
+
+    private Integer getValue(List<Integer> idx, List<Integer> integers, int elemtCount) {
+        int value;
+        int i = idx.get(0);
+        if (integers.get(i) > 0) {
+            value = 0;
+            integers.set(i, integers.get(i) - 1);
+        } else {
+            value = integers.get(i + 2);
+            if (i + 3 >= elemtCount) {
+                return null;
+            }
+            idx.set(0, i + 3);
+        }
+        return value;
     }
 
     private List<int[][]> convertToRGB(int width, int height) {

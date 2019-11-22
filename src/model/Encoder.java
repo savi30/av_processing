@@ -1,7 +1,6 @@
 package model;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 public class Encoder {
@@ -10,20 +9,109 @@ public class Encoder {
     private List<Block> chrominanceRed = new ArrayList<>();
 
 
-    public List<List<Block>> encode(PPM ppm) {
+    public List<List<Integer>> encode(PPM ppm) {
         List<List<Block>> result;
         subSample(ppm);
-        result = forwardDiscreteCosineTransformation();
+        forwardDiscreteCosineTransformation();
+        return compress();
+    }
+
+    private void forwardDiscreteCosineTransformation() {
+        upsample();
+        centerValues();
+        computeCoefficientBlocks();
+    }
+
+    private List<List<Integer>> compress() {
+        List<List<Integer>> compressedBlocks = new ArrayList<>();
+        for (int i = 0; i < luminance.size(); i++) {
+            compressedBlocks.add(compressArray(zigZagParse(luminance.get(i))));
+            compressedBlocks.add(compressArray(zigZagParse(chrominanceBlue.get(i))));
+            compressedBlocks.add(compressArray(zigZagParse(chrominanceRed.get(i))));
+        }
+        return compressedBlocks;
+    }
+
+    private List<Integer> compressArray(List<Double> values) {
+        List<Integer> result = new ArrayList<>();
+        result.add(getSize(values.get(0)));
+        result.add(values.get(0).intValue());
+        int runLength = 0;
+        for (int i = 1; i < values.size(); i++) {
+            if (values.get(i) == 0) {
+                runLength++;
+                continue;
+            }
+            result.add(runLength);
+            result.add(getSize(values.get(i)));
+            result.add(values.get(i).intValue());
+            runLength = 0;
+        }
+        if (runLength == 63) {
+            result.add(0);
+            result.add(0);
+        }
         return result;
     }
 
-    private List<List<Block>> forwardDiscreteCosineTransformation() {
-        upsample();
-        centerValues();
-        return computeCoefficientBlocks();
+    private List<Double> zigZagParse(Block block) {
+        List<Double> result = new ArrayList<>();
+        double[][] values = block.getValues();
+        int i = 0;
+        int j = 0;
+        boolean direction = true; // false means down true means up
+        int count;
+        int k;
+        while (j < Block.STANDARD_BLOCK_SIZE) {
+            count = j + 1;
+            if (direction) {
+                //Going up
+                i = j;
+                k = 0;
+                while (count > 0) {
+                    result.add(values[i--][k++]);
+                    count--;
+                }
+            } else {
+                //Going down
+                i = 0;
+                k = j;
+                while (count > 0) {
+                    result.add(values[i++][k--]);
+                    count--;
+                }
+            }
+            j++;
+            direction = !direction;
+        }
+        j = 1;
+        while (j < Block.STANDARD_BLOCK_SIZE) {
+            count = Block.STANDARD_BLOCK_SIZE - j;
+            if (direction) {
+                //Going up
+                i = Block.STANDARD_BLOCK_SIZE - 1;
+                k = j;
+                while (count > 0) {
+                    result.add(values[i--][k++]);
+                    count--;
+                }
+            } else {
+                //Going down
+                i = j;
+                k = Block.STANDARD_BLOCK_SIZE - 1;
+                while (count > 0) {
+                    result.add(values[i++][k--]);
+                    count--;
+                }
+            }
+            j++;
+            direction = !direction;
+        }
+        return result;
     }
 
-    private List<List<Block>> computeCoefficientBlocks() {
+
+    private void computeCoefficientBlocks() {
         double[][] y_coefficient_block;
         double[][] cb_coefficient_block;
         double[][] cr_coefficient_block;
@@ -44,7 +132,6 @@ public class Encoder {
             this.chrominanceBlue.set(i, quantize(new Block(cb_coefficient_block)));
             this.chrominanceRed.set(i, quantize(new Block(cr_coefficient_block)));
         }
-        return Arrays.asList(luminance, chrominanceBlue, chrominanceRed);
     }
 
     private Block quantize(Block coefficient_block) {
@@ -104,5 +191,21 @@ public class Encoder {
 
     private double alpha(int n) {
         return n > 0 ? 1 : 1 / Math.sqrt(2.0);
+    }
+
+    private Integer getSize(Double aDouble) {
+        int value = aDouble.intValue();
+        if (value == Utils.amplitudes.get(1).get(0) || value == (Utils.amplitudes.get(1).get(0) * -1)) {
+            return 1;
+        } else {
+            final int[] amp = {1};
+            Utils.amplitudes.entrySet().stream().skip(1).forEach(entry -> {
+                if ((value > entry.getValue().get(0) && value < entry.getValue().get(1))
+                        || (value > entry.getValue().get(1) * -1 && value < entry.getValue().get(0) * -1)) {
+                    amp[0] = entry.getKey();
+                }
+            });
+            return amp[0];
+        }
     }
 }
