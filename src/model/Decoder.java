@@ -31,7 +31,8 @@ public class Decoder {
     private Block getBlock(List<Integer> integers) {
         double[][] values = new double[Block.STANDARD_BLOCK_SIZE][Block.STANDARD_BLOCK_SIZE];
         int elemtCount = integers.size();
-        if (elemtCount == 4) {
+        if (elemtCount <= 4) {
+            values[0][0] = integers.get(1);
             return new Block(values);
         }
         boolean direction = false; // false means down true means up
